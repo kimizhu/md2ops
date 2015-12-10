@@ -14,6 +14,33 @@ You can use the Microsoft Intune App SDK to enable mobile app management (MAM) f
 | ------------- | ------------- |
 | android | MAMActivity |
 
+| Android Class | Intune App SDK Replacement |
+|--|--|
+| android.app.Activity | MAMActivity |
+| android.app.ActivityGroup | MAMActivityGroup |
+| android.app.AliasActivity | MAMAliasActivity |
+| android.app.Application | MAMApplication |
+| android.app.DialogFragment | MAMDialogFragment |
+| android.app.ExpandableListActivity | MAMExpandableListActivity |
+| android.app.Fragment | MAMFragment |
+| android.app.IntentService | MAMIntentService |
+| android.app.LauncherActivity | MAMLauncherActivity |
+| android.app.ListActivity | MAMListActivity |
+| android.app.NativeActivity | MAMNativeActivity |
+| android.app.PendingIntent | MAMPendingIntent |
+| android.app.Service | MAMService |
+| android.app.TabActivity | MAMTabActivity |
+| android.app.TaskStackBuilder | MAMTaskStackBuilder |
+| android.app.backup.BackupAgent | MAMBackupAgent |
+| android.app.backup.BackupAgentHelper | MAMBackupAgentHelper |
+| android.app.backup.FileBackupHelper | MAMFileBackupHelper |
+| android.app.backup.SharePreferencesBackupHelper | MAMSharedPreferencesBackupHelper |
+| android.content.BroadcastReceiver | MAMBroadcastReceiver |
+| android.content.ContentProvider | MAMContentProvider |
+| android.os.Binder | MAMBinder* |
+| android.provider.DocumentsProvider | MAMDocumentsProvider |
+| android.preference.PreferenceActivity | MAMPreferenceActivity |
+
 # What is in the SDK 
 
 The Intune App SDK for Android is a standard Android library with no external dependencies. 
