@@ -10,9 +10,9 @@ You can use the Microsoft Intune App SDK to enable mobile app management (MAM) f
 | Content Cell  | Content Cell  |
 
 
-    | Android Class | Intune App SDK Replacement |
-    | ------------- | ------------- |
-    | android | MAMActivity |
+| Android Class | Intune App SDK Replacement |
+| ------------- | ------------- |
+| android | MAMActivity |
 
 # What is in the SDK 
 
