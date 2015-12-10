@@ -9,6 +9,11 @@ First Header  | Second Header
 Content Cell  | Content Cell
 Content Cell  | Content Cell
 
+
+    | Android Class | Intune App SDK Replacement |
+    |--|--|
+    | android.app.Activity | MAMActivity |
+
 # What is in the SDK 
 
 The Intune App SDK for Android is a standard Android library with no external dependencies. 
