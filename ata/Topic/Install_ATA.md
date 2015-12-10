@@ -4,6 +4,11 @@ You can use the Microsoft Intune App SDK to enable mobile app management (MAM) f
 
 **Note**: You may wish to first read the [[Get Started with Intune App SDK guide](Getting%20Started%20and%20FAQ.xml)](intune), which covers the current features of the SDK and describes how to prepare for integration on each supported platform. 
 
+First Header  | Second Header
+------------- | -------------
+Content Cell  | Content Cell
+Content Cell  | Content Cell
+
 # What is in the SDK 
 
 The Intune App SDK for Android is a standard Android library with no external dependencies. 
