@@ -53,32 +53,32 @@ As outlined earlier , the SDK requires changes to the app's source code to enabl
 
 * Android base classes must be replaced by their MAM equivalent. To do so, find all instances of the classes listed in the table below and replace them with the Intune App SDK equivalent.  
 
-    | Android Class | Intune App SDK Replacement |
-    |--|--|
-    | android.app.Activity | MAMActivity |
-    | android.app.ActivityGroup | MAMActivityGroup |
-    | android.app.AliasActivity | MAMAliasActivity |
-    | android.app.Application | MAMApplication |
-    | android.app.DialogFragment | MAMDialogFragment |
-    | android.app.ExpandableListActivity | MAMExpandableListActivity |
-    | android.app.Fragment | MAMFragment |
-    | android.app.IntentService | MAMIntentService |
-    | android.app.LauncherActivity | MAMLauncherActivity |
-    | android.app.ListActivity | MAMListActivity |
-    | android.app.NativeActivity | MAMNativeActivity |
-    | android.app.PendingIntent | MAMPendingIntent |
-    | android.app.Service | MAMService |
-    | android.app.TabActivity | MAMTabActivity |
-    | android.app.TaskStackBuilder | MAMTaskStackBuilder |
-    | android.app.backup.BackupAgent | MAMBackupAgent |
-    | android.app.backup.BackupAgentHelper | MAMBackupAgentHelper |
-    | android.app.backup.FileBackupHelper | MAMFileBackupHelper |
-    | android.app.backup.SharePreferencesBackupHelper | MAMSharedPreferencesBackupHelper |
-    | android.content.BroadcastReceiver | MAMBroadcastReceiver |
-    | android.content.ContentProvider | MAMContentProvider |
-    | android.os.Binder | MAMBinder* |
-    | android.provider.DocumentsProvider | MAMDocumentsProvider |
-    | android.preference.PreferenceActivity | MAMPreferenceActivity |
+| Android Class | Intune App SDK Replacement |
+|--|--|
+| android.app.Activity | MAMActivity |
+| android.app.ActivityGroup | MAMActivityGroup |
+| android.app.AliasActivity | MAMAliasActivity |
+| android.app.Application | MAMApplication |
+| android.app.DialogFragment | MAMDialogFragment |
+| android.app.ExpandableListActivity | MAMExpandableListActivity |
+| android.app.Fragment | MAMFragment |
+| android.app.IntentService | MAMIntentService |
+| android.app.LauncherActivity | MAMLauncherActivity |
+| android.app.ListActivity | MAMListActivity |
+| android.app.NativeActivity | MAMNativeActivity |
+| android.app.PendingIntent | MAMPendingIntent |
+| android.app.Service | MAMService |
+| android.app.TabActivity | MAMTabActivity |
+| android.app.TaskStackBuilder | MAMTaskStackBuilder |
+| android.app.backup.BackupAgent | MAMBackupAgent |
+| android.app.backup.BackupAgentHelper | MAMBackupAgentHelper |
+| android.app.backup.FileBackupHelper | MAMFileBackupHelper |
+| android.app.backup.SharePreferencesBackupHelper | MAMSharedPreferencesBackupHelper |
+| android.content.BroadcastReceiver | MAMBroadcastReceiver |
+| android.content.ContentProvider | MAMContentProvider |
+| android.os.Binder | MAMBinder* |
+| android.provider.DocumentsProvider | MAMDocumentsProvider |
+| android.preference.PreferenceActivity | MAMPreferenceActivity |
 
     *It is only necessary to replace Binder with MAMBinder if the Binder is not generated from an AIDL interface.
 
