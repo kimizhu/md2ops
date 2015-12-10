@@ -1,246 +1,346 @@
-The following are the steps required to get ATA deployed, configured, and running.
+***Note**:  You may wish to first read the [Get Started with Intune App SDK Guide](Getting%20Started%20and%20FAQ.md), which explains how to prepare for integration on each supported platform.* 
 
-To configure ATA, follow these steps:
+You can use the Microsoft Intune App SDK to enable mobile app management (MAM) features within your Android app. MAM policies allow IT administrators to deploy policies to enlightened apps (apps that have the Intune App SDK enabled) that are managed by Microsoft Intune.  
 
-- [Preinstallation steps](#Preinstallsteps)
+**Note**: You may wish to first read the [[Get Started with Intune App SDK guide](Getting%20Started%20and%20FAQ.xml)](intune), which covers the current features of the SDK and describes how to prepare for integration on each supported platform. 
 
-- [Step 1. Download and Install the ATA Center](#InstallATACtr)
+# What is in the SDK 
 
-- [Step 3. Configure ATA Gateway Domain Connectivity Settings](#ConfigConSettings)
+The Intune App SDK for Android is a standard Android library with no external dependencies. 
+The SDK composed of:  
 
-- [Step 4. Download the ATA Gateway Setup Package](#DownloadATA)
+* **`Microsoft.Intune MAM.SDK.jar`**: The interfaces necessary to enable MAM in an app, in addition to enabling interoperability with the Microsoft Intune Company Portal app. Apps must specify it as an Android library reference.
 
-- [Step 5. ATA Gateway installation](#InstallATAGW)
+*  **`Microsoft.Intune.MAM.SDK.Support.v4.jar`**: The interfaces necessary to enable MAM in apps that leverage the android v4 support library.  Apps which need this support must   reference the jar file directly. 
 
-- [Step 6. Configure the ATA Gateway settings](#ConfigATAGW)
+* **`Microsoft.Intune.MAM.SDK.Support.v7.jar`**: The interfaces necessary to enable MAM in apps that leverage the android v7 support library.   Apps which need this support must reference the jar file directly
 
-- [Step 7. Configure VPN Subnets and Honeytoken user](#ATAvpnHoneytokensetting)
+* **The resource directory**: The resources (such as strings) on which the SDK relies. 
 
-## <a name="Preinstallsteps"></a>Pre-installation steps
+* **`Microsoft.Intune.MAM.SDK.aar`**: The SDK components, with the exception of the Support.V4 and Support.V7 jars. This file can be used in place of the individual components if your build system supports AAR files.
 
-1. If you installed the ATA public preview version, see [ATA Release Notes](../Topic/ATA_Release_Notes.md) for help uninstalling the ATA Preview version.
+* **`AndroidManifest.xml`**: The additional entry points and the library requirements. 
 
-2. Install KB2934520 on the ATA Center server and on the ATA Gateway servers before beginning installation, otherwise the ATA installation will install this update and will require a restart in the middle of the ATA installation.
+* **`THIRDPARTYNOTICES.TXT`**:  An attribution notice that acknowledges 3rd party and/or OSS code that will be compiled into your app. 
 
-## <a name="InstallATACtr"></a>Step 1. Download and Install the ATA Center
-After you have verified that the server meets the requirements, you can proceed with the installation of the ATA Center.
+# Requirements 
 
-Perform the following steps on the ATA Center server.
+The Intune App SDK is a compiled Android project. As a result, it is largely agnostic to the version of Android the app uses for its minimum or target API versions. The SDK supports Android API 14 (Android 4.0+) to Android 24. 
 
-1. Download ATA from the [TechNet Evaluation Center](http://www.microsoft.com/en-us/evalcenter/).
+# How the Intune App SDK works 
+
+The Intune App SDK requires changes to an app's source code to enable app management policies. This is done through the replacement of the android base classes with equivalent managed classes, referred to in the document with the prefix `MAM`. The SDK classes live between the Android base class and the app's own derived version of that class.  Using an activity as an example, you end up with an inheritance hierarchy that looks like: `Activity ->MAMActivity->AppSpecificActivity`.
+
+When `AppSpecificActivity` wants to interact with its parent, e.g. `super.onCreate())`, `MAMActivity` is the super class despite being in the inheritance hierarchy and replacing a few methods. Android apps  have a single mode , and have access to the whole system through their Context object.  Apps that have incorporated the Intune App SDK, on the other hand, have dual modes, as the apps continue to access the system through the Context object but, depending on the base Activity used, the Context object will either be provided by Android, or will intelligently multiplex  between a restricted view of the system and the Android-provided Context.
+
+The Intune App SDK for android relies on the presence of the Company Portal app on the device  for enabling MAM policies. When the Company Portal app is not present, the behavior of the MAM enabled app will not be altered, and it will act like any other mobile app. When the Company Portal is installed and has policy for the user, the SDK entry points are initialized asynchronously. Initialization is only required when the process is initially created by Android. During initialization, a connection is established with Company Portal app, and app restriction policy is downloaded.  
+
+# How to integrate with the Intune App SDK
+
+As outlined earlier , the SDK requires changes to the app's source code to enable app management policies. Here are the steps necessary to enable MAM in your  app: 
 
-2. Log in with a user who is a member of the local administrators group.
+## Replace classes, methods, and activities with their MAM equivalent (Required) 
 
-3. From an elevated command prompt, run Microsoft ATA Center Setup.EXE and follow the setup wizard.
+* Android base classes must be replaced by their MAM equivalent. To do so, find all instances of the classes listed in the table below and replace them with the Intune App SDK equivalent.  
 
-4. On the **Welcome** page, select your language and click **Next**.
+    | Android Class | Intune App SDK Replacement |
+    |--|--|
+    | android.app.Activity | MAMActivity |
+    | android.app.ActivityGroup | MAMActivityGroup |
+    | android.app.AliasActivity | MAMAliasActivity |
+    | android.app.Application | MAMApplication |
+    | android.app.DialogFragment | MAMDialogFragment |
+    | android.app.ExpandableListActivity | MAMExpandableListActivity |
+    | android.app.Fragment | MAMFragment |
+    | android.app.IntentService | MAMIntentService |
+    | android.app.LauncherActivity | MAMLauncherActivity |
+    | android.app.ListActivity | MAMListActivity |
+    | android.app.NativeActivity | MAMNativeActivity |
+    | android.app.PendingIntent | MAMPendingIntent |
+    | android.app.Service | MAMService |
+    | android.app.TabActivity | MAMTabActivity |
+    | android.app.TaskStackBuilder | MAMTaskStackBuilder |
+    | android.app.backup.BackupAgent | MAMBackupAgent |
+    | android.app.backup.BackupAgentHelper | MAMBackupAgentHelper |
+    | android.app.backup.FileBackupHelper | MAMFileBackupHelper |
+    | android.app.backup.SharePreferencesBackupHelper | MAMSharedPreferencesBackupHelper |
+    | android.content.BroadcastReceiver | MAMBroadcastReceiver |
+    | android.content.ContentProvider | MAMContentProvider |
+    | android.os.Binder | MAMBinder* |
+    | android.provider.DocumentsProvider | MAMDocumentsProvider |
+    | android.preference.PreferenceActivity | MAMPreferenceActivity |
 
-5. Read the End User License Agreement and if you accept the terms, click **Next**.
+    *It is only necessary to replace Binder with MAMBinder if the Binder is not generated from an AIDL interface.
 
-6. On the **Center Configuration** page, enter the following information based on your environment:
+    **Microsoft.Intune.MAM.SDK.Support.v4.jar**:
 
-   |Field <br /> <br />|Description <br /> <br />|Comments <br /> <br />|
-   |---------|---------------|------------|
-   |Installation Path <br /> <br />|This is the location where the ATA Center will be installed. By default this is  %programfiles%\Microsoft Advanced Threat Analytics\Center <br /> <br />|Leave the default value <br /> <br />|
-   |Database Data Path <br /> <br />|This is the location where the MongoDB database files will be located. By default this is %programfiles%\Microsoft Advanced Threat Analytics\Center\MongoDB\bin\data <br /> <br />|Change the location to a place where you have room to grow based on your sizing. **Note:** <ul><li>In production environments you should use a drive that has enough space based on capacity planning. </li><li>For large deployments the database should be on a separate physical disk. </li> </ul>See [ATA Capacity Planning](../Topic/ATA_Capacity_Planning.md) for sizing information. <br />|
-   |Database Journal Path <br /> <br />|This is the location where the database journal files will be located. By default this is %programfiles%\Microsoft Advanced Threat Analytics\Center\MongoDB\bin\data\journal <br /> <br />|For large deployments, the Database Journal should be on a separate physical disk from the database and the system drive. Change the location to a place where you have room for your Database Journal. <br /> <br />|
-   |ATA Center Service IP address: Port <br /> <br />|This is the IP address that the ATA Center service will listen on for communication from the ATA Gateways. <br /> <br />**Default port:** 443 <br /> <br />|Click the down arrow to select the IP address to be used by the ATA Center service. <br /> <br />The IP address and port of the ATA Center service cannot be the same as the IP address and port of the ATA Console. Make sure to change the port of the ATA Console. <br /> <br />|
-   |ATA Center Service SSL Certificate <br /> <br />|This is the certificate that will be used by the ATA Center service. <br /> <br />|Click the key icon to select a certificate installed or check self-signed certificate when deploying in a lab environment. <br /> <br />|
-   |ATA Console IP address <br /> <br />|This is the IP address that will be used by IIS for the ATA Console. <br /> <br />|Click the down arrow to select the IP address used by the ATA Console. **Note:** Make a note of this IP address to make it easier to access the ATA Console from the ATA Gateway. <br />|
-   |ATA Console SSL certificate <br /> <br />|This is the certificate to be used by IIS. <br /> <br />|Click the key icon to select a certificate installed or check self-signed certificate when deploying in a lab environment. <br /> <br />|
-   ![](../Image/ATA_Center_Configuration.JPG)
+    | Android Class             Intune MAM | SDK Replacement |
+    |--|--|
+    | android.support.v4.app.DialogFragment | MAMDialogFragment
+    | android.support.v4.app.FragmentActivity | MAMFragmentActivity
+    | android.support.v4.app.Fragment | MAMFragment
+    | android.support.v4.app.TaskStackBuilder | MAMTaskStackBuilder
+    | android.support.v4.content.FileProvider | MAMFileProvider
+    
+    **Microsoft.Intune.MAM.SDK.Support.v7.jar**:
 
-7. Click **Install** to install ATA and its components and create the connection between the ATA Center and the ATA Console.
+    |Android Class | Intune MAM SDK Replacement |
+    |--|--|
+    |android.support.v7.app.ActionBarActivity | MAMActionBarActivity |
 
-8. When the installation completes, click **Launch**  to connect to the ATA Console.
 
-   The following components are installed and configured during the installation of ATA Center:
+* When using an android entry point that has been overridden by its MAM equivalent, an alternative version of the entry point's lifecycle must be used (with the exception of the class `MAMApplication`).
 
-   - Internet Information Services (IIS)
+    For example, when deriving from `MAMActivity`, instead of overriding `onCreate` and calling `super.onCreate`, the Activity must override `onMAMCreate` and call s`uper.onMAMCreate`. This allows Activity launch (amongst others) to be restricted in certain cases. 
 
-   - MongoDB
+# Enable features that require app participation 
 
-   - ATA Center service and ATA Console IIS site
+There are some policies the SDK cannot implement on its own. To enable the app to control its behavior for these features, we expose several APIs that you can find in the `AppPolicy` interface included below.  
 
-   - Custom Performance Monitor data collection set
+    /**
+     * External facing app policies.
+     */
+    public interface AppPolicy {
+                /**
+                 * Restrict where an app can save personal data.
+                 * 
+                 * @return True if the app is allowed to save to personal data stores;
+                 *         false otherwise.
+                 */
+                boolean getIsSaveToPersonalAllowed();
+    
+                /**
+                 * Check if policy prohibits saving to a content provider location.
+                 * 
+                 * @param location
+                 *            a content URI to check
+                 * @return True if location is not a content URI or if policy does not 
+                 *         prohibit saving to the content location.
+                 */
+                boolean getIsSaveToLocationAllowed(android.net.Uri location); 
+    
+                /**
+                 * Whether the SDK PIN prompt is enlightened for the app.
+                 * 
+                 * @return True if the PIN is enabled. False otherwise.
+                 */
+                boolean getIsPinRequired();
+                /**
+                 * Whether the Intune Managed Browser is required to open web links.
+                 *
+                 * @return True if the Managed Browser is required, false otherwise
+                 */
+                boolean getIsManagedBrowserRequired();
+    }
 
-   - Self-signed certificates (if selected during the installation)
+## Enable IT admin control over app saving behavior
 
-> [!NOTE]
-> To help in troubleshooting and product enhancement, it is recommended that you install MongoVue and any other MongoDB add-in, or any other third-party tool of your choice. MongoVue requires .Net Framework 3.5 to be installed.
+Many apps implement features that allow the end user to save files locally or to another service. The Intune App SDK allows IT admins to protect against data leakage by applying policy restrictions as they see fit in their organization.  One of the policies that admin can control is if the end user can save to a personal data store. This includes saving to a local location, SD card, or backup services. App participation is needed to enable the feature. If your app allows saving to personal or cloud locations directly from the app, you must implement this feature to ensure that the IT admin can control whether saving to a location is allowed or not. The API below lets the app know whether saving to a personal store is allowed per the current admin policy. The app can then enforce the policy, since it is aware of personal data store available to the end user through the app.  
 
-### Validate installation
+To determine if the policy is enforced, the app can make the following call: 
 
-1. Check to see that the Microsoft Advanced Threat Analytics Center service is running.
+    MAMComponents.get(AppPolicy.class).getIsSaveToPersonalAllowed();
 
-2. On the desktop click the Microsoft Advanced Threat Analytics shortcut to connect to the ATA Console. Log in with the same user credentials that you used to install the ATA Center. The first time you log into the ATA Console you will be brought automatically to the **Domain connectivity settings** page to continue the configuration and the deployment of the ATA Gateways.
+**Note**: MAMComponents.get(AppPolicy.class) will always return a non-null App Policy, even if the device or app is not under management. 
 
-3. Review the error file in the **Microsoft.Tri.Center-Errors.log** file which can be found in the following default location: %programfiles%\Microsoft Advanced Threat Analytics\Center\Logs.
+## Allow app to detect if PIN Policy is required
 
-## <a name="ConfigConSettings"></a>Step 2. Configure ATA Gateway domain connectivity settings
-The settings in the domain connectivity settings section apply to all ATA Gateways managed by the ATA Center.
+ There are additional policies where the app may wish to disable some of its functionality so as to not duplicate functionality in the Intune App SDK. For example, if the app has its own PIN user experience, it may wish to disable it if the SDK is configured to require that the end user enter a PIN. 
 
-To configure the Domain connectivity settings perform the following on the ATA Center server.
+To determine if PIN policy is configured to require PIN entry periodically, the app can make the following call: 
 
-1. Open the ATA Console and log in. For instructions see [Working with the ATA Console](../Topic/Working_with_the_ATA_Console.md).
+    MAMComponents.get(AppPolicy.class).getIsPinRequired();
 
-2. The first time you log into the ATA Console after the ATA Center has been installed, you will automatically be taken to the ATA Gateways configuration page. If you need to modify any of the settings afterwards, click the Settings icon and select **Configuration**.
+## Registering for notifications from the SDK  
 
-   ![](../Image/ATA_config_icon.JPG)
+The Intune App SDK allows your app to have control over the behavior when certain policies, such as a remote wipe policy, are used by the IT admin. To do so, you will need to register for notifications from SDK by creating a `MAMNotificationReceiver` class and  registering it with `MAMNotificationReceiverRegistry`. This is done by providing the receiver and the type of notification the receiver wants to receive in  `App.onCreate`, as the example below illustrates:
 
-3. On the **Gateways** page, click on **Domain connectivity settings**, enter the following information and click **Save**.
+    @Override
+                  public void onCreate() {
+                                    super.onCreate();
+    MAMComponents.get(MAMNotificationReceiverRegistry.class).registerReceiver(
+    new ToastNotificationReceiver(), MAMNotificationType.WIPE_USER_DATA);
+    }
 
-   |Field <br /> <br />|Comments <br /> <br />|
-   |---------|------------|
-   |**Username** (required) <br /> <br />|Enter the read-only user name, for example: **user1**. <br /> <br />|
-   |**Password** (required) <br /> <br />|Enter the password for the read-only user, for example: **Pencil1**. **Note:** Make sure this password is correct. If you save the wrong password, the ATA Service will stop running on the ATA Gateway servers. <br />|
-   |**Domain** (required) <br /> <br />|Enter the domain for the read-only user, for example, **contoso.com**. **Note:** It is important that you enter the complete FQDN of the domain where the user is located. For example, if the user’s account is in domain corp.contoso.com, you need to enter `corp.contoso.com` not contoso.com <br />|
-   ![](../Image/ATA_Domain_Connectivity_User.JPG)
+`MAMNotificationReceiver` simply receives notifications. Some notifications are handled by the SDK directly, others require participation of the app. An app must return either true or false from a notification. It must always return true unless some action it tried to take as a result of the notification failed. This failure may be reported to the Intune service, such as if the app indicates it failed to wipe user data. It is safe to block in `MAMNotificationReceiver.onReceive`; its callback is not running on the UI thread. 
 
-## <a name="DownloadATA"></a>Step 3. Download the ATA Gateway setup package
-After configuring the domain connectivity settings you can download the ATA Gateway setup package.
+The `MAMNotificationReceiver interface is included below as defined in the SDK: 
 
-To download the ATA Gateway package:
+    /**
+     * The SDK is signaling that a MAM event has occurred. 
+     * 
+     */
+    public interface MAMNotificationReceiver {
+                  /**
+                  * A notification was received.
+                  * 
+                  * @param notification
+                  *            The notification that was received.
+    * @return The receiver should return true if it handled the
+    *   notification without error (or if it decided to ignore the
+                *   notification). If the receiver tried to take some action in 
+    *   response to the notification but failed to complete that
+                  *   action it should return false.
+                  */
+                  boolean onReceive(MAMNotification notification);
+    }
 
-1. On the ATA Gateway machine, open a browser and enter the IP address you configured in the ATA Center for the ATA Console. When the ATA Console opens, click on the settings icon and select **Configuration**.
+The following notifications are sent to the app and some of them may require app participation: 
 
-   ![](../Image/ATA_config_icon.JPG)
+* **`WIPE_USER_DATA` notification**: This notification is sent in a `MAMUserNotification` class. When this notification is received, the app should delete all data associated with the identity passed with the `MAMUserNotification`. This notification is currently sent during Intune Service un-enrollment. The user's primary name is typically specified during the enrollment process. If you register for this notification, your app must ensure that all user data has been deleted. If you don't register for it, the default selective wipe behavior will be performed. 
 
-2. In the **ATA Gateways** tab, click **Download ATA Gateway Setup**.
+* **`WIPE_USER_AUXILIARY_DATA` notification**: Apps can register for this notification if they'd like the Intune App SDK to perform the default wipe, but would still like to remove some auxiliary data when the wipe occurs.  
 
-3. Save the package locally.
+* **`REFRESH_POLICY` notification**: This notification is sent in a MAMNotification without any additional information. When this notification is received, any cached policy must  be considered no longer invalidated and therefore should check what the policy is. This is generally handled by the SDK, however should be handled by the app if the policy is used in any persistent way. 
 
-The zip file includes the following:
+## Pending Intents and methods 
 
-- ATA Gateway installer
+After deriving from one of the MAM entry points, you can use the Context as you would normally, for starting Activities, using its `PackageManager`, etc.  `PendingIntents` are an exception to this rule. When calling such classes, you need to change the class name. For example, instead of using `PendingIntent.get*`, `MAMPendingIntents.get*` must be used. 
 
-- Configuration setting file with the required information to connect to the ATA Center
+In some cases, a method available in the Android class has been marked as final in the MAM replacement class. In this case, the MAM replacement class provides a similarly named method (generally suffixed with "MAM") which should be overridden instead. For example, instead of overriding `ContentProvider.query`, you would override `MAMContentProvider.queryMAM`. The Java compiler should enforce the final restrictions to prevent accidental override of the original method instead of the MAM equivalent. 
 
-## <a name="InstallATAGW"></a>Step 4. Install the ATA Gateway
-Before installing the ATA Gateway, validate that port mirroring is properly configured and that the ATA Gateway can see traffic to and from the domain controllers. See [Validate Port Mirroring](../Topic/Validate_Port_Mirroring.md) for more information.
+# Protecting Backup data 
 
-> [!IMPORTANT]
-> Make sure that [KB2919355](http://support.microsoft.com/kb/2919355/) has been installed.  Run the following PowerShell cmdlet to check if the hotfix is installed:
-> 
-> `Get-HotFix -Id kb2919355`
+As of Android Marshmallow (API 23), Android now has two ways for an app to back up its data. these options are available for use in your app and require different steps to ensure that MAM data protection is applied appropriately. You can review the table below for quick overview on corresponding actions required for correct data protection behavior.  You can also find more on Android backup in the [Android Developer Data Backup guide](http://developer.android.com/guide/topics/data/backup.html.). 
 
-Perform the following steps on the ATA Gateway server.
+## Automatic full backup
 
-1. Extract the files from the zip file.
+In Android M, Android began offering automatic full backups to apps regardless of target API when running on an Android M device. As long as the `android:allowBackup` attribute is not false, an app will receive full, unfiltered backups of their app. This poses a data leak risk, therefore the SDK require the changes outlined in the table below to ensure that data protection is applied.  It is important to follow the guidelines outlined below to protect customer data properly.  If you set `android:allowBackup=false` then your app  will never be queued for backups by the operating system and you have no further actions for MAM, since there will be no backup
 
-2. From an elevated command prompt, run Microsoft ATA Gateway Setup.exe and follow the setup wizard.
+ ## “key/value” backups
 
-3. On the **Welcome** page, select your language and click **Next**.
+This option is available to all APIs and uses `BackupAgent` and `BackupAgentHelper`. 
 
-4. Under  **ATA Gateway Configuration**, enter the following information based on your environment:
+### Using BackupAgentHelper
 
-   ![](../Image/ATA_Gateway_Configuration.JPG)
+`BackupAgentHelper` is much simpler to implement than `BackupAgent` both in terms of native Android functionality and MAM integration. `BackupAgentHelper` allows the developer to register entire files and shared preferences to either a `FileBackupHelper` or `SharedPreferencesBackupHelper`, respectively, which are then added to the `BackupAgentHelper` upon creation. 
 
-   |Field <br /> <br />|Description <br /> <br />|Comments <br /> <br />|
-   |---------|---------------|------------|
-   |Installation Path <br /> <br />|This is the location where the ATA Gateway will be installed. By default this is  %programfiles%\Microsoft Advanced Threat Analytics\Gateway <br /> <br />|Leave the default value <br /> <br />|
-   |ATA Gateway Service SSL certificate <br /> <br />|This is the certificate that will be used by the ATA Gateway. <br /> <br />|Use a self-signed certificate for lab environments only. <br /> <br />|
-   |ATA Gateway Registration <br /> <br />|Enter the Username and Password of the ATA administrator. <br /> <br />|For the ATA Gateway to register with the ATA Center, enter the user name and password of the user who installed the ATA Center. This user must be a member of one of the following local groups on the ATA Center. <br /> <br /><ul><li>Administrators </li><li>Microsoft Advanced Threat Analytics Administrators </li> </ul> **Note:** These credentials are used only for registration and are not stored in ATA. <br />|
-   The following components are installed and configured during the installation of the ATA Gateway:
+### Using BackupAgent
 
-   - KB 3047154
+`BackupAgent` allows you to be much more explicit about what data is backed up. However, this options will mean that you will not be able to take advantage of the Android backup framework.  Because you are fairly responsible for the implementation, there are more steps required to ensure appropriate data protection from MAM. Since most of the work is pushed onto you, the developer, MAM integration is slightly more involved. 
 
-      > [!IMPORTANT]
-      > - Do not install KB 3047154 on a virtualization host. This may cause port mirroring to stop working properly.
-      > - Do not install Message Analyzer, Wireshark, or other network capture software on the ATA Gateway. If you need to capture network traffic, install and use Microsoft Network Monitor 3.4.
+#### App does not have a backup agent
+  
+These are the developer options when `Android:allowbBackup =true`:
 
-   - ATA Gateway service
+##### Full back up according to a configuration file: 
 
-   - Microsoft Visual C++ 2013 Redistributable
+Provide a resource under the `com.microsoft.intune.mam.FullBackupContent` metadata tag in your manifest. e.g.:
+    `<meta-data android:name="com.microsoft.intune.mam.FullBackupContent" android:resource="@xml/my_scheme" />`
 
-   - Custom Performance Monitor data collection set
+Add the following attribute in the `<application>` tag: `android:fullBackupContent="@xml/my_scheme"`, where `my_scheme` is an XML resource in your app. 
 
-5. After the installation completes, click **Launch**  to open your browser and log in to the ATA Console.
+##### Full back dup without exclusions 
 
-### <a name="ConfigATAGW"></a>Step 5. Configure the ATA Gateway settings
-After the ATA Gateway was installed, perform the following steps to configure the settings for the ATA Gateway.
+Provide a tag in the manifest such as `<meta-data android:name="com.microsoft.intune.mam.FullBackupContent" android:value="true" />` 
+ 
+Add the following attribute in the `<application>` tag: 
+`android:fullBackupContent="true"`.
 
-1. On the ATA Gateway machine, in the ATA Console, click on the **Configuration** and select the **ATA Gateways** page.
+#### App has a backup agent
 
-2. Enter the following information.
+Follow the recommendations in the `BackupAgent` and `BackupAgentHelper` sections as outlined above 
 
-   |Field <br /> <br />|Description <br /> <br />|Comments <br /> <br />|
-   |---------|---------------|------------|
-   |Description <br /> <br />|Enter a description of the ATA Gateway (optional). <br /> <br />||
-   |**Domain controllers** (required) <br /> <br />See below for additional information about the list of controllers. <br /> <br />|Enter the complete FQDN of your domain controller and click the plus sign to add it to the list. For example,  **dc01.contoso.com** <br /> <br />![](../Image/ATAGWDomainController.png) <br /> <br />|The objects in the first domain controller in the list will sync via LDAP queries. Depending on the size of the domain, this might take some time. **Note:** <ul><li>Make sure that the first domain controller is **not** read-only.   Read only domain controllers should be added only after the initial sync completes. </li> </ul> <br />|
-   |**Capture Network adapters** (required) <br /> <br />|Select the network adapters that are connected to the switch that are configured as the destination mirror port to receive the domain controller traffic. <br /> <br />|Select the Capture network adapter. <br /> <br />|
-   ![](../Image/ATA_Config_GW_Settings.jpg)
+Consider switching to using our `MAMDefaultFullBackupAgent`, which provides easy back up on Android M. 
 
-3. Click **Save**.
+### Before your backup
 
-   > [!NOTE]
-   > It will take a few minutes for the ATA Gateway service to start the first time because it builds the cache of the network capture parsers used by the ATA Gateway.
+Before beginning your backup, you must check that the files or data buffers you are planning on backing up are indeed allowed to be backed up. We've provided you with an `isBackupAllowed` function in `MAMFileProtectionManager` and `MAMDataProtectionManager` to determine this. If the file or data buffer is not allowed to be backed up then you should not attempt to continue utilizing it in your backup.
 
-The following information applies to the servers you enter in the **Domain Controllers** list.
+At some point during your backup, if you want the identities for the files you checked in step 1 backed up, you must call `backupMAMFileIdentity(BackupDataOutput data, File … files)` with the files you plan to extract data from. This will automatically create new backup entities and write them to the `BackupDataOutput` for you. These entities will be automatically consumed upon restore. 
 
-- The first domain controller in the list will be used by the ATA Gateway to sync the objects in the domain via LDAP queries. Depending on the size of the domain, this might take some time.
+## Configure Azure Directory Authentication Library (ADAL)  
 
-- All domain controllers whose traffic is being monitored via port mirroring by the ATA Gateway must be listed in the **Domain Controllers** list. If a domain controller is not listed in the **Domain Controllers** list, detection of suspicious activities might not function as expected.
+The SDK relies on ADAL for its authentication and conditional launch scenarios, which requires that apps have some amount of Azure Active Directory configuration. The configuration values are communicated to the SDK via `AndroidManifest` metadata. To configure your app and enable proper authentication, add the following to the app node in the `AndroidManifest`. Some of these configurations are only required if your app uses ADAL for authentication in general; in that case, you will need the specific values that your app use to register itself with AAD. This is done to ensure that the end user does not get prompted for authentication twice due to AAD recognizing two separate registration values: one from the app and one from the SDK. 
 
-- Make sure that the first domain controller is **not** a read-only domain controller (RODC).
+        <meta-data
+            android:name="com.microsoft.intune.mam.aad.Authority"
+            android:value="https://AAD authority/" />
+        <meta-data
+            android:name="com.microsoft.intune.mam.aad.ClientID"
+            android:value="your-client-ID-GUID" />
+        <meta-data
+            android:name="com.microsoft.intune.mam.aad.NonBrokerRedirectURI"
+            android:value="your-redirect-URI" />
+        <meta-data
+            android:name="com.microsoft.intune.mam.aad.SkipBroker"
+            android:value="[true | false]" />
 
-   Read only domain controllers should be added only after the initial sync completes.
+The GUIDs are not expected to have the preceding or trailing curly bracket.
 
-- At least one domain controller in the list be a global catalog server. This will enable ATA to resolve computer and user objects in other domains in the forest.
+### Common ADAL configurations 
 
-The configuration changes will be applied to the ATA Gateway on the next scheduled sync between the ATA Gateway and the ATA Center.
+The following are common configuration for the values explained above. 
 
-### Validate installation:
-To validate that the ATA Gateway has been successfully deployed, check the following:
+#### App does not integrate ADAL
 
-1. Check that the Microsoft Advanced Threat Analytics Gateway service is running. After you have saved the ATA Gateway settings, it might take a few minutes for the service to start.
+* The authority must  be set to the desired environment where AAD accounts have been configured.
 
-2. If the service does not start, review the “Microsoft.Tri.Gateway-Errors.log” file located in the following default folder, “%programfiles%\Microsoft Advanced Threat Analytics\Gateway\Logs”, search for entries with “transfer” or “service start”.
+* SkipBroker must be set to true.
 
-3. Check the following Microsoft ATA Gateway performance counters:
+#### App integrates ADAL
 
-   - **NetworkListener Captured Messages / sec**: This counter tracks how many messages are being captured by the ATA per second. The value should be mid hundreds to thousands depending on the number of domain controllers being monitored and how busy each domain controller is. Single or double digit values can indicate an issue with the port mirroring configuration.
+* The authority must be set to the desired environment where AAD accounts have been configured.
 
-   - **EntityTransfer Activity Transfers/Sec**: This value should be in the range of a few hundred every few seconds.
+* Client ID must be set to the app's client ID.
 
-4. If this is the first ATA Gateway installed, after a few minutes, log into the ATA Console and open the notification pane by swiping the right side of the screen open. You should see a list of **Entities Recently Learned** in the notification bar on the right side of the console.
+* `NonBrokerRedirectURI` should be set to a valid redirect URI for the app.
+    * Or `urn:ietf:wg:oauth:2.0:oob` must be configured as a valid AAD redirect URI.
 
-5. To validate that the installation completed successfully:
+* SkipBroker must be set to false (or be absent)
 
-   In the console, search for something in the search bar, such as a user or a group on your domain.
+* AAD must be configured to accept the broker redirect URI.
 
-   Open Performance Monitor. In the Performance tree, click on **Performance Monitor** and then click the plus icon to **Add a Counter**. Expand **Microsoft ATA Gateway** and scroll down to **Network Listener Captured Messages per Second** and add it. Then, make sure you see activity on the graph.
+#### App integrates ADAL but does not support the AAD Authenticator app.
 
-   ![](../Image/ATA_performance_monitoring_add_counters.png)
+* The authority must be set to the desired environment where AAD accounts have been configured.
 
-### <a name="ATAvpnHoneytokensetting"></a>Step 6. Configure short-term lease subnets and Honeytoken user
-Short-term lease subnets are subnets in which the IP address assignment changes very rapidly - within seconds or minutes. For example, IP addresses used for your VPNs and Wi-Fi IP addresses. To enter the list of short-term lease subnets used in your organization, follow these steps:
+* Client ID must be set to the app's client ID.
 
-1. From the ATA Console on the ATA Gateway machine, click on the settings icon and select **Configuration**.
+* `NonBrokerRedirectURI` must be set to a valid redirect URI for the app.
 
-   ![](../Image/ATA_config_icon.JPG)
+    * Or `urn:ietf:wg:oauth:2.0:oob` should be configured as a valid AAD redirect URI.
 
-2. Under **Detection**, enter the following for short-term lease subnets. Enter the short-term lease subnets using slash notation format, for example:  `192.168.0.0/24` and click the plus sign.
+## How to enable logging in the SDK 
 
-3. For the Honeytoken account SIDs, enter the SID for the user account that will have no network activity, and click the plus sign. For example: `S-1-5-21-72081277-1610778489-2625714895-10511`.
+Logging is done through the `java.util.logging` framework. To receive the logs, set up global logging as described in the [Java technical guide](http://docs.oracle.com/javase/6/docs/technotes/guides/logging/overview.html). Depending on the app, `App.onCreate` is usually the best place  to initiate logging. Please note that Log messages are keyed by the class name, which may be obfuscated.
 
-   > [!NOTE]
-   > To find the SID for a user, run the following Windows PowerShell cmdlet `Get-ADUser UserName`.
+# Known Platform Limitations 
 
-4. Configure exclusions: You can configure IP addresses to be excluded from specific suspicious activities. See [Working with ATA Detection Settings](../Topic/Working_with_ATA_Detection_Settings.md) for more information.
+## File Size Limitations 
 
-5. Click **Save**.
+On Android, the limitations of the Dalvik executable file format may become an issue for large code bases that run without ProGuard. Specifically, the following limitations may  occur: 
 
-![](../Image/ATA_VPN_Subnets.JPG)
+* The 65K limit on fields.
 
-Congratulations, you have successfully deployed Microsoft Advanced Threat Analytics!
+* The 65K limit on methods.
 
-Check the attack time line to view detected suspicious activities and search for users or computers and view their profiles.
+When including many projects, every android:package will get a copy of R  which will dramatically increase the number of fields as libraries are added. The following recommendations may help mitigate this limitation:
 
-Remember that it takes a minimum of three weeks for ATA to build behavioral profiles, so during the first three weeks you will not see any  suspicious behavior activities.
+* All library projects should share the same android:package where possible. This will not sporadically fail in the field, since it is purely a build-time problem.   In addition, newer versions of the Android SDK will pre-process DEX files to remove some of the redundancy. This lowers the distance from the fields even further.
 
-## See Also
-[For support, check out our forum!](https://social.technet.microsoft.com/Forums/security/en-US/home?forum=mata)
-[Configure Event Collection](../Topic/Configure_Event_Collection.md)
-[ATA Prerequisites](../Topic/ATA_Prerequisites.md)
+* Use the newest Android SDK build tools available.
 
+* Remove all unnecessary and unused libraries (e.g. `android.support.v4`)
+
+## Policy Enforcement Limitations
+
+**Screen Capture**: The SDK is unable to enforce a new screen capture setting value in Activities that have already gone through Activity.onCreate. This can result in a period of time where the app has been configured to disable screenshots but screenshots can still be taken.
+
+**Using Content Resolvers*: The transfer or receive policy may block or partially block the use of a content resolver to access the content provider in another app. This will cause ContentResolver methods to return null or throw a failure value (e.g. `openOutputStream` will throw `FileNotFoundException` if blocked). The app can determine whether a failure to write data through a content resolver was caused by policy (or would be caused by policy) by making the call:
+
+    MAMComponents.get(AppPolicy.class).getIsSaveToLocationAllowed(contentURI)
+
+**Exported Services**: The `AndroidManifest.xml` file included in the Intune App SDK contains `MAMNotificationReceiverService`, which must be an exported service to allow the Company Portal to send notifications to an enlightened app. The service checks the caller to ensure that only the Company Portal is allowed to send notifications. 
+
+# Recommended Android Best Practices 
+
+The Intune SDK maintains the contract provided by the Android API, though failure conditions may be triggered more frequently as a result of policy enforcement. These Android best practices will reduce the likelihood of failure: 
+
+* Android SDK Functions that may return null have a higher likelihood of being null now.  To minimize issues, ensure that null checks are in the right places.
+
+* Features that can be checked for must be checked for through their SDK APIs.
+
+* Any derived functions must call through to their super class versions.
+
+* Avoid use of any API in an ambiguous way. For example, `Activity.startActivityForResult/onActivityResult` without checking the requestCode will cause strange behavior.
